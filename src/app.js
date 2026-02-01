@@ -23,7 +23,6 @@ app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
-
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -36,8 +35,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -48,7 +45,6 @@ app.get("/log", (req, res) => {
   console.log("Deploy check: success");
   res.status(200).json({ message: "Deploy successful" });
 });
-
 
 app.use("/audio", express.static("public/audio"));
 
