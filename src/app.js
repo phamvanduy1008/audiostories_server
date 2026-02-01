@@ -44,6 +44,13 @@ app.get("/", (req, res) => {
   res.send("Story Audio API Running...");
 });
 
+// Deployment log endpoint
+app.get("/log", (req, res) => {
+  // Log to console for server logs/monitoring
+  console.log('Deploy check: success');
+  return res.status(200).json({ message: "Deploy successful" });
+});
+
 app.use("/audio", express.static("public/audio"));
 
 
@@ -53,5 +60,4 @@ app.use("/api/users", userRoutes);
 app.use("/api/savestories", savedStoryRoutes);
 app.use("/api/history", historyRoutes);
 
-// Export app (dùng trong server.js nếu tách riêng)
 export default app;
