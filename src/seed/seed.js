@@ -98,10 +98,11 @@ await Chapter.insertMany(chaptersStory2);
       categoryId: catStudy._id,
       tags: ["Tập trung", "Study"]
     });
+
     /* ================= STORY 4 ================= */
     const story4 = await Story.create({
       title: "Thư Giản Cuối Ngày",
-      slug: "thu-gian-cuoi-ngay",
+      slug: "tubaotienbon_ios",
       description: "Âm thanh nhẹ nhàng giúp thư giãn sau một ngày dài.",
       coverImage: "https://picsum.photos/400/600?random=3",
       authorId: admin._id,
@@ -110,11 +111,11 @@ await Chapter.insertMany(chaptersStory2);
     });
 
     await Chapter.create({
-      storyId: story3._id,
+      storyId: story4._id,
       title: "Chương 1",
       order: 1,
       content: "Âm thanh tập trung...",
-      name: "01.m4a"
+      name: "20_ios.m4a"
     });
 
     console.log("🌱 SEED DATA SUCCESSFULLY!");

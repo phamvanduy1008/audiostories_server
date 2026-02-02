@@ -1,5 +1,6 @@
 import express from "express";
 import { Chapter, Story } from "../models/schema.js";
+import mongoose from "mongoose";
 
 
 const router = express.Router();
@@ -24,6 +25,86 @@ router.get("/", async (req, res) => {
     res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.post("/", async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const {
+      title,
+      slug,
+      description = "",
+      coverImage = "",
+      authorId,
+      categoryId,
+      tags = [],
+      chaptersCount
+    } = req.body;
+
+    const count = parseInt(chaptersCount, 10);
+
+    if (!title || !slug) {
+      return res.status(400).json({ message: "title and slug are required" });
+    }
+
+    if (!count || count < 1) {
+      return res
+        .status(400)
+        .json({ message: "chaptersCount must be >= 1" });
+    }
+
+    const exists = await Story.findOne({ slug }).session(session);
+    if (exists) {
+      return res.status(409).json({ message: "slug already exists" });
+    }
+
+    const [story] = await Story.create(
+      [
+        {
+          title,
+          slug,
+          description,
+          coverImage,
+          authorId,
+          categoryId,
+          tags
+        }
+      ],
+      { session }
+    );
+
+    /* ========= CREATE CHAPTERS ========= */
+    const chapters = [];
+    for (let i = 1; i <= count; i++) {
+      chapters.push({
+        storyId: story._id,
+        title: `Chương ${i}`,
+        order: i,
+        content: `Nội dung chương ${i}...`,
+        name: `${String(i).padStart(2, "0")}.m4a`,
+        duration: null
+      });
+    }
+
+    await Chapter.insertMany(chapters, { session });
+
+    /* ========= COMMIT ========= */
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(201).json({
+      message: "Story created successfully",
+      storyId: story._id,
+      chaptersCount: count
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error(err);
+    res.status(500).json({ message: "Create story failed" });
   }
 });
 
