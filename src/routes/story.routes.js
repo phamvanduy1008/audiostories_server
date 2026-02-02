@@ -194,6 +194,81 @@ router.get("/id/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+const checkAdmin = (req, res, next) => {
+  const user = req.user; 
+  if (!user || user.email !== 'admin@gmail.com') {
+    return res.status(403).json({ message: 'Chỉ admin mới có quyền thêm truyện' });
+  }
+  next();
+};
+
+router.post('/stories', checkAdmin, async (req, res) => {
+  try {
+    const {
+      title,
+      slug: inputSlug,
+      description,
+      coverImage,
+      categoryId,
+      tags,
+      status = 'published',
+      initialChapters = 1, // số chap ban đầu admin muốn tạo
+    } = req.body;
+
+    // Tạo slug nếu không có
+    let slug = inputSlug || title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    // Kiểm tra slug unique
+    let existing = await Story.findOne({ slug });
+    let counter = 1;
+    while (existing) {
+      slug = `${slug}-${counter}`;
+      existing = await Story.findOne({ slug });
+      counter++;
+    }
+
+    const story = new Story({
+      title,
+      slug,
+      description,
+      coverImage,
+      authorId: req.user._id, // hoặc để null nếu không cần
+      categoryId,
+      tags: tags || [],
+      status,
+    });
+
+    await story.save();
+
+    // Tạo các chapter trống nếu có initialChapters
+    if (initialChapters > 0) {
+      const chapters = [];
+      for (let i = 1; i <= initialChapters; i++) {
+        chapters.push({
+          storyId: story._id,
+          title: `Chương ${i}`,
+          order: i,
+          content: '', // trống, admin sẽ edit sau
+          name: `Chương ${i}`,
+          duration: null,
+        });
+      }
+      await Chapter.insertMany(chapters);
+    }
+
+    res.status(201).json({
+      message: 'Thêm truyện thành công',
+      story,
+      chaptersCreated: initialChapters,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Lỗi server', error: error.message });
+  }
+});
 
 
 

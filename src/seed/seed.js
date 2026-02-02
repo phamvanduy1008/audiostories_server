@@ -42,8 +42,8 @@ const seed = async () => {
     /* ================= STORY 1 ================= */
     const story1 = await Story.create({
       title: "Tụ Bảo Tiên Bồn",
-      slug: "tubaotienbon",
-      description: "Hành trình kỳ bí xoay quanh chiếc tụ bảo thần bí.",
+      slug: "audio_tubaotienbon",
+      description: "Giang Bình An hành trình kỳ bí xoay quanh chiếc tụ bảo thần bí.",
       coverImage: "https://picsum.photos/400/600?random=1",
       authorId: admin._id,
       categoryId: catAudio._id,
@@ -63,7 +63,7 @@ const seed = async () => {
     await Chapter.insertMany(chapters1);
 /* ================= STORY 2 ================= */
 const story2 = await Story.create({
-  title: "Ta Bị Tông Môn Đem Bán Ở Rể, Vợ Đẹp Xem Thường, Nhưng Ai Ngờ Ta Có Được Vạn Đạo Các",
+  title: "Ta Bị Tông Môn Đem Bán Ở Rể",
   slug: "tabitongmondembanore",
   description: "Một thiếu niên bị tông môn bán làm ở rể, chịu đủ khinh thường, nhưng vận mệnh xoay chuyển khi hắn nắm giữ Vạn Đạo Các.",
   coverImage: "https://picsum.photos/400/600?random=2",
@@ -87,36 +87,7 @@ for (let i = 1; i <= 104; i++) {
 
 await Chapter.insertMany(chaptersStory2);
 
-
-    /* ================= STORY 3 ================= */
-    const story3 = await Story.create({
-      title: "Học Tập Hiệu Quả",
-      slug: "hoc-tap-hieu-qua",
-      description: "Âm thanh hỗ trợ tập trung khi học.",
-      coverImage: "https://picsum.photos/400/600?random=3",
-      authorId: admin._id,
-      categoryId: catStudy._id,
-      tags: ["Tập trung", "Study"]
-    });
-
-    /* ================= STORY 4 ================= */
-    const story4 = await Story.create({
-      title: "Thư Giản Cuối Ngày",
-      slug: "tubaotienbon_ios",
-      description: "Âm thanh nhẹ nhàng giúp thư giãn sau một ngày dài.",
-      coverImage: "https://picsum.photos/400/600?random=3",
-      authorId: admin._id,
-      categoryId: catStudy._id,
-      tags: ["Tập trung", "Study"]
-    });
-
-    await Chapter.create({
-      storyId: story4._id,
-      title: "Chương 1",
-      order: 1,
-      content: "Âm thanh tập trung...",
-      name: "20_ios.m4a"
-    });
+  
 
     console.log("🌱 SEED DATA SUCCESSFULLY!");
     process.exit();
