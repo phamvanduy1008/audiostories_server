@@ -194,15 +194,8 @@ router.get("/id/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-const checkAdmin = (req, res, next) => {
-  const user = req.user; 
-  if (!user || user.email !== 'admin@gmail.com') {
-    return res.status(403).json({ message: 'Chỉ admin mới có quyền thêm truyện' });
-  }
-  next();
-};
 
-router.post('/stories', checkAdmin, async (req, res) => {
+router.post('/stories', async (req, res) => {
   try {
     const {
       title,
@@ -212,16 +205,15 @@ router.post('/stories', checkAdmin, async (req, res) => {
       categoryId,
       tags,
       status = 'published',
-      initialChapters = 1, // số chap ban đầu admin muốn tạo
+      initialChapters = 1,
     } = req.body;
 
-    // Tạo slug nếu không có
+    // Tạo slug unique
     let slug = inputSlug || title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
-    // Kiểm tra slug unique
     let existing = await Story.findOne({ slug });
     let counter = 1;
     while (existing) {
@@ -235,7 +227,7 @@ router.post('/stories', checkAdmin, async (req, res) => {
       slug,
       description,
       coverImage,
-      authorId: req.user._id, // hoặc để null nếu không cần
+      authorId: req.user?._id || null,
       categoryId,
       tags: tags || [],
       status,
@@ -243,16 +235,16 @@ router.post('/stories', checkAdmin, async (req, res) => {
 
     await story.save();
 
-    // Tạo các chapter trống nếu có initialChapters
     if (initialChapters > 0) {
       const chapters = [];
       for (let i = 1; i <= initialChapters; i++) {
+        const paddedOrder = i < 10 ? `0${i}` : `${i}`; 
         chapters.push({
           storyId: story._id,
-          title: `Chương ${i}`,
-          order: i,
-          content: '', // trống, admin sẽ edit sau
-          name: `Chương ${i}`,
+          title: `Chương ${paddedOrder}`,
+          order: i, 
+          content: '',
+          name: `Chương ${paddedOrder}`,
           duration: null,
         });
       }
@@ -269,7 +261,6 @@ router.post('/stories', checkAdmin, async (req, res) => {
     res.status(500).json({ message: 'Lỗi server', error: error.message });
   }
 });
-
 
 
 // 🔎 Search endpoint

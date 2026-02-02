@@ -50,16 +50,19 @@ const seed = async () => {
       tags: ["Phiêu lưu", "Huyền bí"]
     });
 
-    const chapters1 = [];
-    for (let i = 1; i <= 44; i++) {
-      chapters1.push({
-        storyId: story1._id,
-        title: `Chương ${i}`,
-        order: i,
-        content: `Nội dung chương ${i}...`,
-        name: `${i}.m4a`
-      });
-    }
+   const chapters1 = [];
+  for (let i = 1; i <= 44; i++) {
+    const fileIndex = String(i).padStart(2, '0'); 
+
+    chapters1.push({
+      storyId: story1._id,
+      title: `Chương ${i}`,
+      order: i,
+      content: `Nội dung chương ${i}...`,
+      name: `${fileIndex}.m4a`
+    });
+}
+
     await Chapter.insertMany(chapters1);
 /* ================= STORY 2 ================= */
 const story2 = await Story.create({
@@ -76,12 +79,13 @@ const story2 = await Story.create({
 const chaptersStory2 = [];
 
 for (let i = 1; i <= 104; i++) {
+      const fileIndex = String(i).padStart(2, '0'); 
   chaptersStory2.push({
     storyId: story2._id,
     title: `Chương ${i}`,
     order: i,
     content: `Nội dung chương ${i}...`,
-    name: `${i}.m4a`
+    name: `${fileIndex}.m4a`
   });
 }
 
