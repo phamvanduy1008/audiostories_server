@@ -61,4 +61,57 @@ router.post("/login", async (req, res) => {
   }
 });
 
+const authMiddleware = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Không có token, truy cập bị từ chối" });
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    console.error(err);
+    return res.status(401).json({ message: "Token không hợp lệ" });
+  }
+};
+
+// ────────────────────────────────────────────────
+// GET /api/users/me    ← thông tin user hiện tại
+// ────────────────────────────────────────────────
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select(
+      "username email avatar role status createdAt"
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    const response = {
+      id: user._id,
+      username: user.username || "Người dùng",
+      email: user.email,
+      avatar: user.avatar || null,         
+      role: user.role,
+      joinDate: user.createdAt
+        ? new Intl.DateTimeFormat("vi-VN", { month: "long", year: "numeric" }).format(user.createdAt)
+        : "Không xác định",
+
+        stats: {
+        listenedStories: 0,          // chưa có collection history → để 0
+        totalListeningTime: "0 Giờ", // chưa track thời gian nghe
+        favoriteStories: 0           // chưa có favorite
+      }
+    };
+
+    res.json(response);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server", error: err.message });
+  }
+});
+
 export default router;

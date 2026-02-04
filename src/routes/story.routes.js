@@ -20,6 +20,7 @@ router.get("/", async (req, res) => {
       imageUrl: s.coverImage,
       description: s.description,
       tags: s.tags || [],
+      chaptersCount: s.chaptersCount || 0
     }));
 
     res.json(formatted);
@@ -31,6 +32,7 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     const {
       title,
@@ -40,55 +42,83 @@ router.post("/", async (req, res) => {
       authorId,
       categoryId,
       tags = [],
-      chaptersCount
+      chaptersCount,
+      currentCount
     } = req.body;
 
-    const count = parseInt(chaptersCount, 10);
-
     if (!title || !slug) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: "title and slug are required" });
     }
 
-    if (!count || count < 1) {
-      return res
-        .status(400)
-        .json({ message: "chaptersCount must be >= 1" });
+    /* ========= PARSE NUMBERS ========= */
+    let totalChapters = parseInt(chaptersCount, 10);
+    let currentChapters = parseInt(currentCount, 10);
+
+    if (isNaN(totalChapters) || totalChapters < 0) totalChapters = 0;
+    if (isNaN(currentChapters) || currentChapters < 0) currentChapters = 0;
+
+    // Không cho current > total
+    if (currentChapters > totalChapters) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ message: "currentCount cannot exceed chaptersCount" });
     }
 
+    /* ========= CHECK SLUG ========= */
     const exists = await Story.findOne({ slug }).session(session);
     if (exists) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(409).json({ message: "slug already exists" });
     }
 
+    /* ========= DETERMINE STATUS ========= */
+    let storyStatus = "draft";
+
+    if (currentChapters === 0) {
+      storyStatus = "draft";
+    } else if (currentChapters < totalChapters) {
+      storyStatus = "publishing";
+    } else if (currentChapters === totalChapters && totalChapters > 0) {
+      storyStatus = "completed";
+    }
+
+    /* ========= CREATE STORY ========= */
     const [story] = await Story.create(
-      [
-        {
-          title,
-          slug,
-          description,
-          coverImage,
-          authorId,
-          categoryId,
-          tags
-        }
-      ],
+      [{
+        title,
+        slug,
+        description,
+        coverImage,
+        authorId,
+        categoryId,
+        tags,
+        chaptersCount: totalChapters,
+        currentChapters: currentChapters,
+        status: storyStatus
+      }],
       { session }
     );
 
-    /* ========= CREATE CHAPTERS ========= */
-    const chapters = [];
-    for (let i = 1; i <= count; i++) {
-      chapters.push({
-        storyId: story._id,
-        title: `Chương ${i}`,
-        order: i,
-        content: `Nội dung chương ${i}...`,
-        name: `${String(i).padStart(2, "0")}.m4a`,
-        duration: null
-      });
-    }
+    /* ========= CREATE EXISTING CHAPTERS ========= */
+    if (currentChapters > 0) {
+      const chapters = [];
 
-    await Chapter.insertMany(chapters, { session });
+      for (let i = 1; i <= currentChapters; i++) {
+        chapters.push({
+          storyId: story._id,
+          title: `Chương ${i}`,
+          order: i,
+          content: `Nội dung chương ${i}...`,
+          name: `${String(i).padStart(2, "0")}.m4a`,
+          duration: 0
+        });
+      }
+
+      await Chapter.insertMany(chapters, { session });
+    }
 
     /* ========= COMMIT ========= */
     await session.commitTransaction();
@@ -96,12 +126,23 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({
       message: "Story created successfully",
-      storyId: story._id,
-      chaptersCount: count
+      story: {
+        id: story._id,
+        title: story.title,
+        slug: story.slug,
+        status: story.status,
+        chaptersCount: story.chaptersCount,
+        currentChapters: story.currentChapters
+      }
     });
+
   } catch (err) {
     await session.abortTransaction();
     session.endSession();
+
+    if (err.code === 11000) {
+      return res.status(409).json({ message: "slug already exists" });
+    }
 
     console.error(err);
     res.status(500).json({ message: "Create story failed" });
@@ -178,6 +219,7 @@ router.get("/id/:id", async (req, res) => {
       imageUrl: story.coverImage,
       description: story.description,
       tags: story.tags,
+      chaptersCount: story.chaptersCount || chapters.length,
       chapters: chapters.map(c => ({
         id: c._id,
         number: String(c.order).padStart(2, "0"),
@@ -231,6 +273,7 @@ router.post('/stories', async (req, res) => {
       categoryId,
       tags: tags || [],
       status,
+      chaptersCount: initialChapters
     });
 
     await story.save();
@@ -244,7 +287,7 @@ router.post('/stories', async (req, res) => {
           title: `Chương ${paddedOrder}`,
           order: i, 
           content: '',
-          name: `Chương ${paddedOrder}`,
+          name: `${paddedOrder}.m4a`,
           duration: null,
         });
       }

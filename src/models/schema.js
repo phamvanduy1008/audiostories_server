@@ -18,7 +18,6 @@ const CategorySchema = new mongoose.Schema({
   description: String
 });
 
-
 /* ================= STORY ================= */
 const StorySchema = new mongoose.Schema({
   title: String,
@@ -28,10 +27,16 @@ const StorySchema = new mongoose.Schema({
   authorId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
   tags: [String],
+  chaptersCount: { type: Number, default: 0 },     
+  currentChapters: { type: Number, default: 0 },  
   views: { type: Number, default: 0 },
   likes: { type: Number, default: 0 },
-  status: { type: String, default: "published" }
-}, { timestamps: true });
+  status: { 
+  type: String,
+  enum: ["draft","publishing", "completed"],
+  default: "draft"
+}}
+, { timestamps: true });
 
 
 /* ================= CHAPTER ================= */

@@ -5,19 +5,9 @@ const router = express.Router();
 
 /* GET ALL CATEGORIES */
 router.get("/", async (req, res) => {
-  try {
-    const categories = await Category.find();
-
-    res.json(categories.map(c => ({
-      id: c._id,
-      name: c.name,
-      slug: c.slug,
-      description: c.description
-    })));
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const categories = await Category.find().select("_id name");
+  res.json(categories);
 });
+
 
 export default router;

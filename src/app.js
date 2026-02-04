@@ -8,6 +8,8 @@ import categoryRoutes from "./routes/category.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import savedStoryRoutes from "./routes/savestory.routes.js";
 import historyRoutes from "./routes/history.routes.js";
+import audioRoutes from "./routes/audio.js";
+
 
 dotenv.config();
 connectDB();
@@ -53,5 +55,6 @@ app.use("/api/categories", categoryRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/savestories", savedStoryRoutes);
 app.use("/api/history", historyRoutes);
+app.use('/api/audio', audioRoutes);
 
 export default app;
